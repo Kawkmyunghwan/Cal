@@ -126,7 +126,7 @@ input[type=text] {
 	let h4;
 	
 	var xhr = new XMLHttpRequest();
-	
+
 	
 	//숫자를 입력받아 input박스에 띄워줌
 	function addOutPut(num) {
@@ -134,12 +134,6 @@ input[type=text] {
 		display.value += num;
 		return display.value;
 	}
-	
-	
-	//부호를 입력받아서 symbol 이라는 변수에 저장함.
-	//곱하기, 나누기 부호 뒤에 -가 온다면, 띄워쓰지 않게 끔 하기.
-	//더하기, 빼기 뒤에 다른 부호가 온다면 해당하는 부호로 대체,
-	//곱하기, 나누기 부호 뒤에 -가 아닌 다른 부호가 온다면 해당하는 부호로 대체.
 	
 	function cal(operator) {
 		let display = document.getElementById("display");
@@ -150,6 +144,7 @@ input[type=text] {
 
 	function calculate() {
 		let inputVal = document.getElementById('display').value;
+		let dbVal = document.getElementById('display').value;
 		inputVal = inputVal.split(' ');
 		
 		let list = [];
@@ -174,7 +169,7 @@ input[type=text] {
 		}
 		
 		console.log(inputVal);
-		
+		//**중위표기법 -> 후위표기법 으로 변환시키는 과정**
 		for(let i = 0; i < inputVal.length; i++){
 			if(inputVal[i] != '+' && inputVal[i] != '-' && inputVal[i] != '*' && inputVal[i] != '/' && inputVal[i] != '(' && inputVal[i] != ')'){
 				if(list[0] == '-'){
@@ -185,12 +180,12 @@ input[type=text] {
 			//처음으로 들어온 연산자일 경우, operatorList에 쌓아줌.
 			//!!but, i가 0일때 '-'가 들어온다면, 그 후에 들어올 숫자와 합쳐줘야함.(음수표현)
 			}else if(inputVal[i] == '+' || inputVal[i] == '-' || inputVal[i] == '*' || inputVal[i] == '/'){
-				if(i == 0 && inputVal[i] == '-'){
+				if(i == 0 && inputVal[i] == '-' && inputVal[i+1] != '('){
 					list.push(inputVal[i]);
 				}else if(operatorList.length == 0){
 					operatorList.push(inputVal[i]);
 				}
-			//여는 괄호가 나오면, 닫는 괄호가 나올때 까지 스택에 연산자를 조건없이 추가해준다.
+			//여는 괄호, 닫는 괄호는 조건없이 연산자스택에 push 해준다.
 			}else if(inputVal[i] == '(' || inputVal[i] == ')'){
 				operatorList.push(inputVal[i]);
 			}
@@ -199,16 +194,17 @@ input[type=text] {
 				if(inputVal[i] == '+' || inputVal[i] == '-' || inputVal[i] == '*' || inputVal[i] == '/'){
 					operatorList.push(inputVal[i]);
 				}
+				//')'가 나올때 까지 연산자를 조건없이 추가해줘야 하기 때문에, continue를 통해 뒷 코드를 생략하고 for문으로 돌아간다.
 				continue
 			}
-
+			
+			
 			
 			//연산자 스택에 제일 최근에 들어간 연산자와, 새로 들어오는 연산자를 비교해야함.
 			if(operatorList[operatorList.length - 1] == '+' || operatorList[operatorList.length - 1] == '-'){	
 				if(inputVal[i+1] == '+' || inputVal[i+1] == '-'){
 					//동등하거나 하위순위의 연산자가 들어온다면, operatorList의 모든 요소를 pop 시켜줘서 list에 push 해주어야함.
 					while(true){
-						//list에 넣을때, 배열의 첫번째부터 꺼내야함.
 						list.push(operatorList.pop());
 						if(operatorList.length == 0){
 							break;
@@ -238,6 +234,7 @@ input[type=text] {
 					}
 					operatorList.push(inputVal[i+1]);
 				}
+				//**연산자스택에서 닫힌 괄호를 찾는다면, 여는 괄호를 찾을 때 까지 모든 연산자를 list에 추가해준다.
 			}else if(operatorList[operatorList.length - 1] == ')'){
 					for(let i = operatorList.length - 1; i >= 0; i--){
 						if(operatorList[i] != '('){
@@ -259,20 +256,26 @@ input[type=text] {
 			}
 		}
 		
-		for(let i = 0; i < list.length; i++) {
-			  if(list[i] === '(' || list[i] === ')' || list[i] === undefined)  {
-			    list.splice(i, 1);
-			    i--;
-			  }
+		//list가 가지고있는 쓸데없는 요소들을 제거해준다.
+		for(let i=0; i<list.length; i++){
+			if(list[i] === '(' || list[i] === ')' || list[i] === undefined){
+				list.splice(i, 1);
+				i--;
 			}
+		}
 		
 		console.log(list);
-		//후위표기식을 사칙연산하기.
 		
-		//숫자는 스택에 추가하기.
-		//연산자가 나오면 숫자 2개를 pop 해서 계산한다.
-		//이 때 먼저 pop 되는 숫자가 두번째 값, 나중에 pop 되는 숫자가 첫번째 값이 되도록 하여 계산해야한다.
-		//계산한 값은 다시 스택에 넣는다.
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		//후위표기식을 연산하기.
 		
 		let postfixList = [];
 		let tempNum1 = 0;
@@ -316,8 +319,17 @@ input[type=text] {
 		
 		//result input박스에 값을 표시
 		document.getElementById('result').value = postfixList;
+		
+		console.log(dbVal);	
+		callAjax("ajaxData=" + dbVal + " = " + postfixList)
 	}
 
+	
+	
+	
+	
+	
+	
 
 	//키보드로 값을 입력 받았을 때 실행하는 함수
 	window.addEventListener('keydown', function(e){
@@ -332,7 +344,7 @@ input[type=text] {
 		 	//Enter를 입력 받았을 때 calculate() 함수 호출,
 			}else if(val == 'Enter'){
 				calculate();
-				//document.getElementById('display').value = '';
+				document.getElementById('display').value = '';
 				
 				//calculate() 함수 호출 후, 0.01초 후에 bringAjax() 함수 호출
 				setTimeout(function() {
