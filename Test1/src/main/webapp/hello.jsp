@@ -45,7 +45,7 @@ input[type=text] {
 	border : none;
 	width: 384px;
   	height: 50px;
-  	font-size: 40px;
+  	font-size: 30px;
  	outline: none;
  	padding-left : 5px;
  	padding-right: 10px;
@@ -152,24 +152,6 @@ input[type=text] {
 		let inputVal = document.getElementById('display').value;
 		inputVal = inputVal.split(' ');
 		
-		//중위연산자 -> 후위연산자로 변환하는 형식으로 계산해줘야함.
-		//배열에서, 숫자는 바로 list에 넣어주고, 연산자의 경우에는 stack에 push를 해줌.
-		//연산자의 경우는 우선순위를 정해줘야 하는데, *, /가 + - 보다 우선순위가 높음.
-		//첫번째 연산자는 그냥 넣어줌.
-		//두번째 연산자가 들어올 때 부터, 만약에 들어오는 연산자가 높은 우선순위를 가지고 있다면 그대로 push를 통해 stack에 쌓아줌.
-		//만약, 들어오는 연산자가 우선순위가 같거나 낮다면, stack에서 pop을 통해 '기존에 있는' 연산자를 꺼내주고, 새로운 연산자를 push 한 후에,
-		//'기존에 있던 연산자들'은 list에 push를 해준다.
-		//식이 끝나서, 더이상 push 할 연산자가 없다면, stack에서 pop을 통해 모든 연산자를 꺼내주고, list에 push 해준다.
-		
-		
-		//inputVal 이라는 리스트를 반복해서 돌면서, 첫 번째 숫자를 list에 넣는다.
-		//후에 나오는 연산자는 일단 operatorList에 push 한다.
-		//후에 나오는 index를 숫자 or 연산자인지 판단하여, 숫자라면 list에 넣는다.
-		//연산자라면, operatorList에 있는 연산자를 불러온다.
-		//불러온 연산자가 * or / 일때, pop을 통해 빼준 값을 list에 넣어준 후, 새로 들어온 연산자를 operatorList에 넣어준다.
-		//불러온 연산자가 + or / 일때, 후에 들어온 연산자도 + or / 라면 pop을 통해 빼준 값을 list에 넣어준다. 그리고 새로 들어온 연산자를 operatorList에 넣어준다.
-		//inputVal 리스트의 반복문이 끝났을 때, operatorList를 pop 해서 list에 push해준다.
-		
 		let list = [];
 		let operatorList = [];
 	
@@ -194,8 +176,7 @@ input[type=text] {
 		console.log(inputVal);
 		
 		for(let i = 0; i < inputVal.length; i++){
-			//inputVal[i]가 숫자일 경우에는 계속해서 쌓음.
-			if(inputVal[i] != '+' && inputVal[i] != '-' && inputVal[i] != '*' && inputVal[i] != '/'){
+			if(inputVal[i] != '+' && inputVal[i] != '-' && inputVal[i] != '*' && inputVal[i] != '/' && inputVal[i] != '(' && inputVal[i] != ')'){
 				if(list[0] == '-'){
 					list[0] = list[0] + inputVal[i]
 				}else{
@@ -209,7 +190,19 @@ input[type=text] {
 				}else if(operatorList.length == 0){
 					operatorList.push(inputVal[i]);
 				}
+			//여는 괄호가 나오면, 닫는 괄호가 나올때 까지 스택에 연산자를 조건없이 추가해준다.
+			}else if(inputVal[i] == '(' || inputVal[i] == ')'){
+				operatorList.push(inputVal[i]);
 			}
+			// operatorList에 '('는 있고 ')'는 없는 상황일 때
+			if(operatorList.indexOf('(') != '-1' && operatorList.indexOf(')') == '-1'){
+				if(inputVal[i] == '+' || inputVal[i] == '-' || inputVal[i] == '*' || inputVal[i] == '/'){
+					operatorList.push(inputVal[i]);
+				}
+				continue
+			}
+
+			
 			//연산자 스택에 제일 최근에 들어간 연산자와, 새로 들어오는 연산자를 비교해야함.
 			if(operatorList[operatorList.length - 1] == '+' || operatorList[operatorList.length - 1] == '-'){	
 				if(inputVal[i+1] == '+' || inputVal[i+1] == '-'){
@@ -245,9 +238,18 @@ input[type=text] {
 					}
 					operatorList.push(inputVal[i+1]);
 				}
-			}
+			}else if(operatorList[operatorList.length - 1] == ')'){
+					for(let i = operatorList.length - 1; i >= 0; i--){
+						if(operatorList[i] != '('){
+							list.push(operatorList.pop());					
+						}else if(operatorList[i] == '(') {
+							list.push(operatorList.pop());				
+							break;
+						}
+					}
+				}
 		}
-
+		
 		//혹시나 operatorList에 남아있는 연산자가 있을 수 있기 때문에,
 		//배열에 요소가 전부 없어질 때 까지 반복문을 돌려서 list에 push해줌.
 		while(true){
@@ -256,6 +258,13 @@ input[type=text] {
 				break;
 			}
 		}
+		
+		for(let i = 0; i < list.length; i++) {
+			  if(list[i] === '(' || list[i] === ')' || list[i] === undefined)  {
+			    list.splice(i, 1);
+			    i--;
+			  }
+			}
 		
 		console.log(list);
 		//후위표기식을 사칙연산하기.
@@ -323,7 +332,7 @@ input[type=text] {
 		 	//Enter를 입력 받았을 때 calculate() 함수 호출,
 			}else if(val == 'Enter'){
 				calculate();
-				document.getElementById('display').value = '';
+				//document.getElementById('display').value = '';
 				
 				//calculate() 함수 호출 후, 0.01초 후에 bringAjax() 함수 호출
 				setTimeout(function() {
