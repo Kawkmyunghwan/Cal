@@ -124,6 +124,13 @@ input[type=text] {
 	let num = 0;
 	let symbol;
 	let h4;
+	let operObj = {
+		plus : '+',
+		minus : '-',
+		multiply : '*',
+		divide : '/'
+	}
+	
 	
 	var xhr = new XMLHttpRequest();
 
@@ -140,6 +147,14 @@ input[type=text] {
 		display.value += " " + operator + " ";
 		return display.value;
 	}
+	
+	function isOper(operator){
+		if(operator == '+' || operator == '-' || operator == '*' || operator == '/'){
+			return true
+		}else{
+			return false
+		}
+	}
 
 
 	function calculate() {
@@ -148,7 +163,7 @@ input[type=text] {
 		inputVal = inputVal.split(' ');
 		
 		let list = [];
-		let operatorList = [];
+		let operStack = [];
 	
 		//inputVal에서, *나 / 뒤에 '-'가 있을 때 -와 -뒤의 숫자를 합쳐줘야함.
 		// *나 /뒤에 0이 있으면 계산이 안되게 해야함.
@@ -170,88 +185,77 @@ input[type=text] {
 		
 		console.log(inputVal);
 		//**중위표기법 -> 후위표기법 으로 변환시키는 과정**
-		for(let i = 0; i < inputVal.length; i++){
-			if(inputVal[i] != '+' && inputVal[i] != '-' && inputVal[i] != '*' && inputVal[i] != '/' && inputVal[i] != '(' && inputVal[i] != ')'){
+		const change = inputVal.forEach((elem, i) => {
+ 
+			if(isOper(elem) == false){
 				if(list[0] == '-'){
-					list[0] = list[0] + inputVal[i]
+					list[0] = list[0] + elem
 				}else{
-					list.push(inputVal[i]);
+					list.push(elem);
 				}
-			//처음으로 들어온 연산자일 경우, operatorList에 쌓아줌.
+			//처음으로 들어온 연산자일 경우, operStack에 쌓아줌.
+			
 			//!!but, i가 0일때 '-'가 들어온다면, 그 후에 들어올 숫자와 합쳐줘야함.(음수표현)
-			}else if(inputVal[i] == '+' || inputVal[i] == '-' || inputVal[i] == '*' || inputVal[i] == '/'){
-				if(i == 0 && inputVal[i] == '-' && inputVal[i+1] != '('){
-					list.push(inputVal[i]);
-				}else if(operatorList.length == 0){
-					operatorList.push(inputVal[i]);
+			}else {
+				if(isOper(elem) == true){
+					if(i == 0 && elem == '-' && inputVal[i+1] != '('){
+						list.push(elem);
+					}else if(operStack.length == 0){
+						operStack.push(elem);
+					}
+				}else if(elem == '(' || elem == ')'){
+					operStack.push(elem);
 				}
-			//여는 괄호, 닫는 괄호는 조건없이 연산자스택에 push 해준다.
-			}else if(inputVal[i] == '(' || inputVal[i] == ')'){
-				operatorList.push(inputVal[i]);
 			}
-			// operatorList에 '('는 있고 ')'는 없는 상황일 때
-			if(operatorList.indexOf('(') != '-1' && operatorList.indexOf(')') == '-1'){
-				if(inputVal[i] == '+' || inputVal[i] == '-' || inputVal[i] == '*' || inputVal[i] == '/'){
-					operatorList.push(inputVal[i]);
+			// operStack에 '('는 있고 ')'는 없는 상황일 때
+			if(operStack.indexOf('(') != '-1' && operStack.indexOf(')') == '-1'){
+				if(isOper(elem) == true){
+					operStack.push(elem);
 				}
 				//')'가 나올때 까지 연산자를 조건없이 추가해줘야 하기 때문에, continue를 통해 뒷 코드를 생략하고 for문으로 돌아간다.
-				continue
+				return
 			}
-			
 			
 			
 			//연산자 스택에 제일 최근에 들어간 연산자와, 새로 들어오는 연산자를 비교해야함.
-			if(operatorList[operatorList.length - 1] == '+' || operatorList[operatorList.length - 1] == '-'){	
+			if(operStack[operStack.length - 1] == '+' || operStack[operStack.length - 1] == '-'){	
 				if(inputVal[i+1] == '+' || inputVal[i+1] == '-'){
-					//동등하거나 하위순위의 연산자가 들어온다면, operatorList의 모든 요소를 pop 시켜줘서 list에 push 해주어야함.
-					while(true){
-						list.push(operatorList.pop());
-						if(operatorList.length == 0){
-							break;
-						}
+					//동등하거나 하위순위의 연산자가 들어온다면, operStack의 모든 요소를 pop 시켜줘서 list에 push 해주어야함.
+					for(let index of operStack){
+						list.push(operStack.pop());
 					}
-					//그리고 새롭게 들어온 연산자를 operatorList에 push 해줌.
-					operatorList.push(inputVal[i+1]);
-				//우위연산자가 들어오게 될 경우, operatorList에 계속해서 쌓아줌.
+					//그리고 새롭게 들어온 연산자를 operStack에 push 해줌.
+					operStack.push(inputVal[i+1]);
+				//우위연산자가 들어오게 될 경우, operStack에 계속해서 쌓아줌.
 				}else if(inputVal[i+1] == '*' || inputVal[i+1] == '/'){
-					operatorList.push(inputVal[i+1]);
+					operStack.push(inputVal[i+1]);
 				}
-			}else if(operatorList[operatorList.length - 1] == '*' || operatorList[operatorList.length - 1] == '/'){
-				if(inputVal[i+1] == '+' || inputVal[i+1] == '-'){
-					while(true){
-						list.push(operatorList.pop());
-						if(operatorList.length == 0){
-							break;
-						}
+			}else if(operStack[operStack.length - 1] == '*' || operStack[operStack.length - 1] == '/'){
+				if(isOper(inputVal[i+1]) == true){
+					for(let index of operStack){
+						list.push(operStack.pop());
 					}
-					operatorList.push(inputVal[i+1]);
-				}else if(inputVal[i+1] == '*' || inputVal[i+1] == '/'){
-					while(true){
-						list.push(operatorList.pop());
-						if(operatorList.length == 0){
-							break;
-						}
-					}
-					operatorList.push(inputVal[i+1]);
+					operStack.push(inputVal[i+1]);
 				}
 				//**연산자스택에서 닫힌 괄호를 찾는다면, 여는 괄호를 찾을 때 까지 모든 연산자를 list에 추가해준다.
-			}else if(operatorList[operatorList.length - 1] == ')'){
-					for(let i = operatorList.length - 1; i >= 0; i--){
-						if(operatorList[i] != '('){
-							list.push(operatorList.pop());					
-						}else if(operatorList[i] == '(') {
-							list.push(operatorList.pop());				
+			}else if(operStack[operStack.length - 1] == ')'){
+					for(let i = operStack.length - 1; i >= 0; i--){
+						if(operStack[i] != '('){
+							list.push(operStack.pop());
+						}else if(operStack[i] == '(') {
+							list.push(operStack.pop());
 							break;
 						}
 					}
 				}
-		}
+		})
 		
-		//혹시나 operatorList에 남아있는 연산자가 있을 수 있기 때문에,
+		
+		//혹시나 operStack에 남아있는 연산자가 있을 수 있기 때문에,
 		//배열에 요소가 전부 없어질 때 까지 반복문을 돌려서 list에 push해줌.
 		while(true){
-			list.push(operatorList.pop());
-			if(operatorList.length == 0){
+			list.push(operStack.pop());
+			if(operStack.length == 0){
 				break;
 			}
 		}
