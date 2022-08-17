@@ -124,12 +124,7 @@ input[type=text] {
 	let num = 0;
 	let symbol;
 	let h4;
-	let operObj = {
-		plus : '+',
-		minus : '-',
-		multiply : '*',
-		divide : '/'
-	}
+
 	
 	
 	var xhr = new XMLHttpRequest();
@@ -157,6 +152,8 @@ input[type=text] {
 	}
 
 
+	
+	
 	function calculate() {
 		let inputVal = document.getElementById('display').value;
 		let dbVal = document.getElementById('display').value;
@@ -165,8 +162,9 @@ input[type=text] {
 		let list = [];
 		let operStack = [];
 	
-		//inputVal에서, *나 / 뒤에 '-'가 있을 때 -와 -뒤의 숫자를 합쳐줘야함.
-		// *나 /뒤에 0이 있으면 계산이 안되게 해야함.
+		//계산식에서, *나 / 뒤에 '-'가 있을 때 -와 -뒤의 숫자를 합쳐줘야함.
+		//마찬가지로 괄호 뒤에 -가 있을 경우에는, -와 -뒤의 숫자를 합쳐줘야함.
+		
 		for(let i=0; i<inputVal.length; i++){
 			while(true){
 				if(inputVal[i] === '')  {
@@ -181,44 +179,60 @@ input[type=text] {
 				inputVal[i+1] = inputVal[i+1] + inputVal[i+2]; 
 				inputVal[i+2] = '';
 			}
+			if(inputVal[i] == '(' && inputVal[i+1] == '-'){
+				inputVal[i+1] = inputVal[i+1] + inputVal[i+2];
+				inputVal[i+2] = '';
+			}
 		}
 		
 		console.log(inputVal);
 		//**중위표기법 -> 후위표기법 으로 변환시키는 과정**
+		// ( 1 + 1 )  +  ( 2 + 1 )  / 3
+		
+		//중위표기법 -> 후위표기법 변환 renew
+		//inputVal에서 요소를 하나 꺼내서, list에 넣든 operStack에 넣든
+		//inputVal을 하나씩 없애기
+
 		const change = inputVal.forEach((elem, i) => {
- 
 			if(isOper(elem) == false){
 				if(list[0] == '-'){
 					list[0] = list[0] + elem
 				}else{
 					list.push(elem);
 				}
-			//처음으로 들어온 연산자일 경우, operStack에 쌓아줌.
-			
+			//처음으로 들어온 연산자일 경우, operStack에 쌓아줌.		
 			//!!but, i가 0일때 '-'가 들어온다면, 그 후에 들어올 숫자와 합쳐줘야함.(음수표현)
 			}else {
 				if(isOper(elem) == true){
-					if(i == 0 && elem == '-' && inputVal[i+1] != '('){
+					if(i == 0 && elem == '-' && inputVal[1] != '('){
 						list.push(elem);
 					}else if(operStack.length == 0){
 						operStack.push(elem);
 					}
-				}else if(elem == '(' || elem == ')'){
-					operStack.push(elem);
 				}
 			}
+			if(elem == '(' || elem == ')'){
+				operStack.push(elem);
+			}
+			
+			
+			
 			// operStack에 '('는 있고 ')'는 없는 상황일 때
-			if(operStack.indexOf('(') != '-1' && operStack.indexOf(')') == '-1'){
+			if(operStack.includes('(') == true && operStack.includes(')') == false){
 				if(isOper(elem) == true){
 					operStack.push(elem);
 				}
-				//')'가 나올때 까지 연산자를 조건없이 추가해줘야 하기 때문에, continue를 통해 뒷 코드를 생략하고 for문으로 돌아간다.
+				
+				//')'가 나올때 까지 연산자를 조건없이 추가해줘야 하기 때문에, return을 통해 뒷 코드를 생략하고 forEach문으로 돌아간다.
 				return
 			}
 			
+			//해결방안3.. inputVal에서 닫힌괄호를 찾고, 닫힌괄호 + 1 이 만약 연산자일 때,
+			//operStack[operStack.length - 2]과 inputVal[i+1]을 비교해서 스택에 추가할지, 다 pop 시키고 스택에 추가할지 판단하는
+			//코드를 작성해야함.
 			
-			//연산자 스택에 제일 최근에 들어간 연산자와, 새로 들어오는 연산자를 비교해야함.
-			if(operStack[operStack.length - 1] == '+' || operStack[operStack.length - 1] == '-'){	
+			//기존 연산자스택의 마지막 인덱스와, 새로 들어오는 연산자의 우위를 비교해야함.
+			if(operStack[operStack.length - 1] == '+' || operStack[operStack.length - 1] == '-'){
 				if(inputVal[i+1] == '+' || inputVal[i+1] == '-'){
 					//동등하거나 하위순위의 연산자가 들어온다면, operStack의 모든 요소를 pop 시켜줘서 list에 push 해주어야함.
 					for(let index of operStack){
@@ -230,15 +244,28 @@ input[type=text] {
 				}else if(inputVal[i+1] == '*' || inputVal[i+1] == '/'){
 					operStack.push(inputVal[i+1]);
 				}
+				//문제점. 괄호를 다 처리한 후, 연산자 스택에 연산자가 남아있을 때
+				//inputVal에서 그 다음 요소와 맞지않아서 비교가 불가, 즉 operStack에 쌓을 수 없게되어 inputVal에서 연산자가 하나 남게됨
+				
+				//해결방안.. list, operStack에 값을 넣을 때 마다 inputVal을 하나씩 없애주기.
+				//내일 한번 ↑ 해보기
+				//해결방안2.. inputVal과 list를 비교해서, 
+				
+				
+			//연산자 스택에서 *, / 뒤에는 어떤 연산자가 와도 모든 요소를 pop 시켜줘야함.
 			}else if(operStack[operStack.length - 1] == '*' || operStack[operStack.length - 1] == '/'){
 				if(isOper(inputVal[i+1]) == true){
 					for(let index of operStack){
 						list.push(operStack.pop());
 					}
+					//그리고 새롭게 들어온 연산자를 operStack에 push 해줌.
 					operStack.push(inputVal[i+1]);
 				}
-				//**연산자스택에서 닫힌 괄호를 찾는다면, 여는 괄호를 찾을 때 까지 모든 연산자를 list에 추가해준다.
+			//연산자스택에서 닫힌 괄호를 찾는다면, 여는 괄호를 찾을 때 까지 모든 연산자를 list에 추가해준다.
 			}else if(operStack[operStack.length - 1] == ')'){
+					//스택 : *
+					//48+65-
+					//스택에 *는 확실하게 존재, inputVal에서 ) 뒤에 연산자가 있으면 스택과 비교, 처리하게 끔
 					for(let i = operStack.length - 1; i >= 0; i--){
 						if(operStack[i] != '('){
 							list.push(operStack.pop());
@@ -247,6 +274,7 @@ input[type=text] {
 							break;
 						}
 					}
+					//여기있는 operStack과 inputVal에 남아있는 연산자와 비교해서 넣어줘야함.
 				}
 		})
 		
